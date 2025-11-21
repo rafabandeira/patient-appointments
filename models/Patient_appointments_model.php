@@ -23,6 +23,11 @@ class Patient_appointments_model extends App_Model
     {
         // (Código anterior de cálculo de tempo...)
         $service = $this->get_service($data['service_id']);
+        
+        if (!$service) {
+            return ['status' => false, 'message' => 'Serviço não encontrado.'];
+        }
+
         $duration = $service->duration_minutes;
         $start_dt = new DateTime($data['start_time']);
         $end_dt   = clone $start_dt;
@@ -144,7 +149,7 @@ class Patient_appointments_model extends App_Model
             'phonenumber' => $patient->phone,
             // Campos obrigatórios padrão do Perfex
             'billing_street' => '', 
-            'currency' => $this->db->get_where(db_prefix().'currencies', ['isdefault'=>1])->row()->id,
+            'currency' => $this->get_default_currency_id(),
         ];
 
         // Inserir Cliente
@@ -209,7 +214,7 @@ class Patient_appointments_model extends App_Model
             'number'              => get_option('next_invoice_number'),
             'date'                => date('Y-m-d'),
             'duedate'             => date('Y-m-d'), // Vencimento hoje
-            'currency'            => $this->db->get_where(db_prefix().'currencies', ['isdefault'=>1])->row()->id,
+            'currency'            => $this->get_default_currency_id(),
             'newitems'            => $newitems,
             'subtotal'            => $appointment->price,
             'total'               => $appointment->price,
@@ -225,6 +230,17 @@ class Patient_appointments_model extends App_Model
         }
 
         return false;
+    }
+
+    private function get_default_currency_id()
+    {
+        $currency = $this->db->get_where(db_prefix().'currencies', ['isdefault'=>1])->row();
+        if ($currency) {
+            return $currency->id;
+        }
+        // Fallback: return the first currency found or 0 (which might still fail validation but avoids 500)
+        $first = $this->db->get(db_prefix().'currencies')->row();
+        return $first ? $first->id : 0;
     }
 
 }
