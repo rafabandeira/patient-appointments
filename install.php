@@ -5,6 +5,7 @@ $CI = &get_instance();
 
 // 1. Tabela de Pacientes
 if (!$CI->db->table_exists(db_prefix() . 'pat_patients')) {
+    $charset = isset($CI->db->char_set) ? $CI->db->char_set : 'utf8';
     $CI->db->query('CREATE TABLE `' . db_prefix() . 'pat_patients` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `fullname` varchar(150) NOT NULL,
@@ -14,11 +15,12 @@ if (!$CI->db->table_exists(db_prefix() . 'pat_patients')) {
       `history` text DEFAULT NULL,
       `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=' . ($CI->db->char_set ?? 'utf8') . ';');
+    ) ENGINE=InnoDB DEFAULT CHARSET=' . $charset . ';');
 }
 
 // 2. Tabela de Serviços
 if (!$CI->db->table_exists(db_prefix() . 'pat_services')) {
+    $charset = isset($CI->db->char_set) ? $CI->db->char_set : 'utf8';
     $CI->db->query('CREATE TABLE `' . db_prefix() . 'pat_services` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `name` varchar(150) NOT NULL,
@@ -26,11 +28,12 @@ if (!$CI->db->table_exists(db_prefix() . 'pat_services')) {
       `price` decimal(15,2) DEFAULT 0.00,
       `color` varchar(20) DEFAULT "#3b82f6",
       PRIMARY KEY (`id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=' . ($CI->db->char_set ?? 'utf8') . ';');
+    ) ENGINE=InnoDB DEFAULT CHARSET=' . $charset . ';');
 }
 
 // 3. Tabela de Agendamentos
 if (!$CI->db->table_exists(db_prefix() . 'pat_appointments')) {
+    $charset = isset($CI->db->char_set) ? $CI->db->char_set : 'utf8';
     $CI->db->query('CREATE TABLE `' . db_prefix() . 'pat_appointments` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `patient_id` int(11) NOT NULL,
@@ -43,7 +46,7 @@ if (!$CI->db->table_exists(db_prefix() . 'pat_appointments')) {
       PRIMARY KEY (`id`),
       KEY `patient_id` (`patient_id`),
       KEY `service_id` (`service_id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=' . ($CI->db->char_set ?? 'utf8') . ';');
+    ) ENGINE=InnoDB DEFAULT CHARSET=' . $charset . ';');
 }
 
 

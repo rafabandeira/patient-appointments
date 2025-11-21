@@ -84,8 +84,8 @@ function patient_appointments_parse_email($data)
     // Verifica se o template sendo enviado é do nosso módulo
     if ($data['template']['type'] == 'patient_appointments') {
         
-        // Os dados vêm no array de parâmetros
-        $appointment = $data['template']['merge_fields_data']['appointment'] ?? null;
+        // Os dados vêm no array de parâmetros - Compatível com PHP 5.6+
+        $appointment = isset($data['template']['merge_fields_data']['appointment']) ? $data['template']['merge_fields_data']['appointment'] : null;
 
         if ($appointment) {
             $merge_fields = [
