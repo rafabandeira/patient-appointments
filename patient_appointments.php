@@ -9,7 +9,9 @@ Requires at least: 2.3.*
 Author: Dev Perfex
 */
 
-define('PATIENT_APPOINTMENTS_MODULE_NAME', 'patient_appointments');
+if (!defined('PATIENT_APPOINTMENTS_MODULE_NAME')) {
+    define('PATIENT_APPOINTMENTS_MODULE_NAME', 'patient_appointments');
+}
 
 hooks()->add_action('admin_init', 'patient_appointments_init_menu_items');
 hooks()->add_action('admin_init', 'patient_appointments_permissions');

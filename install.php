@@ -14,7 +14,7 @@ if (!$CI->db->table_exists(db_prefix() . 'pat_patients')) {
       `history` text DEFAULT NULL,
       `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (`id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=' . $CI->db->char_set . ';');
+    ) ENGINE=InnoDB DEFAULT CHARSET=' . ($CI->db->char_set ?? 'utf8') . ';');
 }
 
 // 2. Tabela de Serviços
@@ -26,7 +26,7 @@ if (!$CI->db->table_exists(db_prefix() . 'pat_services')) {
       `price` decimal(15,2) DEFAULT 0.00,
       `color` varchar(20) DEFAULT "#3b82f6",
       PRIMARY KEY (`id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=' . $CI->db->char_set . ';');
+    ) ENGINE=InnoDB DEFAULT CHARSET=' . ($CI->db->char_set ?? 'utf8') . ';');
 }
 
 // 3. Tabela de Agendamentos
@@ -43,7 +43,7 @@ if (!$CI->db->table_exists(db_prefix() . 'pat_appointments')) {
       PRIMARY KEY (`id`),
       KEY `patient_id` (`patient_id`),
       KEY `service_id` (`service_id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=' . $CI->db->char_set . ';');
+    ) ENGINE=InnoDB DEFAULT CHARSET=' . ($CI->db->char_set ?? 'utf8') . ';');
 }
 
 

@@ -20,28 +20,28 @@ class Patient_appointments_model extends App_Model
     }
 
     public function add_appointment($data)
-{
-    // (Código anterior de cálculo de tempo...)
-    $service = $this->get_service($data['service_id']);
-    $duration = $service->duration_minutes;
-    $start_dt = new DateTime($data['start_time']);
-    $end_dt   = clone $start_dt;
-    $end_dt->modify("+{$duration} minutes");
-    $data['end_time'] = $end_dt->format('Y-m-d H:i:s');
-    $data['staff_id'] = get_staff_user_id();
+    {
+        // (Código anterior de cálculo de tempo...)
+        $service = $this->get_service($data['service_id']);
+        $duration = $service->duration_minutes;
+        $start_dt = new DateTime($data['start_time']);
+        $end_dt   = clone $start_dt;
+        $end_dt->modify("+{$duration} minutes");
+        $data['end_time'] = $end_dt->format('Y-m-d H:i:s');
+        $data['staff_id'] = get_staff_user_id();
 
-    // Inserção
-    $this->db->insert(db_prefix() . 'pat_appointments', $data);
-    $insert_id = $this->db->insert_id();
+        // Inserção
+        $this->db->insert(db_prefix() . 'pat_appointments', $data);
+        $insert_id = $this->db->insert_id();
 
-    if ($insert_id) {
-        // NOVA PARTE: Enviar E-mail
-        $this->send_confirmation_email($insert_id);
-        
-        return ['status' => true, 'id' => $insert_id];
+        if ($insert_id) {
+            // NOVA PARTE: Enviar E-mail
+            $this->send_confirmation_email($insert_id);
+            
+            return ['status' => true, 'id' => $insert_id];
+        }
+        return ['status' => false, 'message' => 'Erro ao inserir no banco'];
     }
-    return ['status' => false, 'message' => 'Erro ao inserir no banco'];
-}
 
     // Método auxiliar para preparar e enviar o e-mail
     public function send_confirmation_email($appointment_id)
@@ -107,14 +107,12 @@ class Patient_appointments_model extends App_Model
     }
 
     // Adicione estes métodos na classe Patient_appointments_model
-    public function get_patient($id)
-    {
+    public function get_patient($id) {
         $this->db->where('id', $id);
         return $this->db->get(db_prefix() . 'pat_patients')->row();
     }
 
-    public function get_patient_history($patient_id)
-    {
+    public function get_patient_history($patient_id) {
         // Seleciona agendamento + nome do serviço + nome do médico (Staff)
         $this->db->select('a.*, s.name as service_name, s.price, CONCAT(st.firstname, " ", st.lastname) as staff_name');
         $this->db->from(db_prefix() . 'pat_appointments a');
@@ -130,8 +128,7 @@ class Patient_appointments_model extends App_Model
     /**
      * Garante que o paciente existe como Cliente no Perfex
      */
-    public function ensure_patient_is_client($patient_id)
-    {
+    public function ensure_patient_is_client($patient_id) {
         $patient = $this->get_patient($patient_id);
         
         // Se já tem ID vinculado, retorna ele
@@ -179,8 +176,7 @@ class Patient_appointments_model extends App_Model
     /**
      * Gera Fatura a partir do Agendamento
      */
-    public function generate_invoice($appointment_id)
-    {
+    public function generate_invoice($appointment_id) {
         $this->load->model('invoices_model');
 
         // 1. Pegar dados do agendamento
