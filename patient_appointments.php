@@ -81,24 +81,16 @@ function patient_appointments_register_merge_fields($for)
 // Função que realiza a troca real {variavel} -> Valor
 function patient_appointments_parse_email($data)
 {
-    // Verifica se o template sendo enviado é do nosso módulo
-    if ($data['template']['type'] == 'patient_appointments') {
+    // Verifica se o template é do nosso módulo
+    if (isset($data['template']) && $data['template']->type == 'patient_appointments') {
         
-        // Os dados vêm no array de parâmetros - Compatível com PHP 5.6+
-        $appointment = isset($data['template']['merge_fields_data']['appointment']) ? $data['template']['merge_fields_data']['appointment'] : null;
-
-        if ($appointment) {
-            $merge_fields = [
-                '{patient_name}'     => $appointment->patient_name,
-                '{service_name}'     => $appointment->service_name,
-                '{appointment_date}' => _d(date('Y-m-d', strtotime($appointment->start_time))),
-                '{appointment_time}' => date('H:i', strtotime($appointment->start_time)),
-                '{staff_name}'       => $appointment->staff_name,
-            ];
-
-            foreach ($merge_fields as $key => $val) {
+        // Acessa os merge fields passados
+        if (isset($data['template']->merge_fields) && is_array($data['template']->merge_fields)) {
+            foreach ($data['template']->merge_fields as $key => $val) {
                 $data['message'] = str_replace($key, $val, $data['message']);
-                $data['subject'] = str_replace($key, $val, $data['subject']);
+                if (isset($data['subject'])) {
+                    $data['subject'] = str_replace($key, $val, $data['subject']);
+                }
             }
         }
     }

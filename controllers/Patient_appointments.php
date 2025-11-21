@@ -48,7 +48,15 @@ class Patient_appointments extends AdminController
     // Salvar Agendamento via AJAX
     public function add_appointment_ajax()
     {
-        if (!$this->input->is_ajax_request()) show_404();
+        if (!$this->input->is_ajax_request()) {
+            show_404();
+        }
+        
+        // Validação de permissão
+        if (!has_permission('patient_appointments', '', 'create')) {
+            echo json_encode(['status' => false, 'message' => 'Sem permissão']);
+            die();
+        }
         
         $data = $this->input->post();
         $result = $this->patient_appointments_model->add_appointment($data);

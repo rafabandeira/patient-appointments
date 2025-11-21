@@ -66,21 +66,40 @@
 
 <script>
 $(function(){
-    var calendarEl = document.getElementById('calendar');
-    
-    // Simulação de inicialização do Calendar (Depende da versão do FullCalendar no Perfex do usuário)
-    // Abaixo, código genérico jQuery FullCalendar v3/v4 compatível
-    var calendar = $('#calendar').fullCalendar({
+    // Inicialização compatível com FullCalendar v3 (versão comum no Perfex)
+    $('#calendar').fullCalendar({
         header: {
             left: 'prev,next today',
             center: 'title',
             right: 'month,agendaWeek,agendaDay'
         },
+        locale: 'pt-br',
         defaultView: 'agendaWeek',
         editable: false,
-        events: '<?php echo admin_url("patient_appointments/get_events"); ?>',
+        selectable: false,
+        allDaySlot: false,
+        slotDuration: '00:30:00',
+        minTime: '07:00:00',
+        maxTime: '20:00:00',
+        events: {
+            url: '<?php echo admin_url("patient_appointments/get_events"); ?>',
+            error: function() {
+                alert('Erro ao carregar eventos da agenda.');
+            }
+        },
         eventClick: function(event) {
-            alert('Paciente: ' + event.title + '\nObs: ' + event.description);
+            var msg = 'Paciente: ' + event.title;
+            if(event.description) {
+                msg += '\n\nObservações: ' + event.description;
+            }
+            alert(msg);
+        },
+        loading: function(isLoading) {
+            if(isLoading) {
+                $('#calendar').append('<div class="calendar-loading"><i class="fa fa-spinner fa-spin"></i></div>');
+            } else {
+                $('.calendar-loading').remove();
+            }
         }
     });
 
@@ -88,14 +107,32 @@ $(function(){
     $('#appointment-form').submit(function(e){
         e.preventDefault();
         var form = $(this);
-        $.post(form.attr('action'), form.serialize(), function(response){
-            var res = JSON.parse(response);
-            if(res.status) {
-                alert_float('success', 'Agendado com sucesso');
-                $('#newAppointmentModal').modal('hide');
-                $('#calendar').fullCalendar('refetchEvents');
-            } else {
-                alert_float('danger', res.message);
+        var submitBtn = form.find('button[type="submit"]');
+        
+        submitBtn.prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Salvando...');
+        
+        $.ajax({
+            url: form.attr('action'),
+            type: 'POST',
+            data: form.serialize(),
+            dataType: 'json',
+            success: function(response){
+                if(response.status) {
+                    alert_float('success', 'Agendamento criado com sucesso!');
+                    $('#newAppointmentModal').modal('hide');
+                    form[0].reset();
+                    $('.selectpicker').selectpicker('refresh');
+                    $('#calendar').fullCalendar('refetchEvents');
+                } else {
+                    alert_float('danger', response.message || 'Erro ao criar agendamento');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Erro AJAX:', error);
+                alert_float('danger', 'Erro ao comunicar com o servidor. Verifique o console.');
+            },
+            complete: function() {
+                submitBtn.prop('disabled', false).html('Salvar');
             }
         });
     });

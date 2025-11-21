@@ -51,32 +51,48 @@ if (!$CI->db->table_exists(db_prefix() . 'pat_appointments')) {
 
 
 // 4. Criar Template de E-mail Padrão (se não existir)
+// Template de E-mail
+$CI->load->model('emails_model');
+
+// Verifica se já existe
 $CI->db->where('slug', 'patient-appointment-created');
+$CI->db->where('language', 'portuguese');
 $exists = $CI->db->count_all_results(db_prefix() . 'emailtemplates');
 
 if (!$exists) {
-    // Inserir para Português (assumindo ID 1 ou sistema base)
     $CI->db->insert(db_prefix() . 'emailtemplates', [
-        'slug'     => 'patient-appointment-created',
         'type'     => 'patient_appointments',
+        'slug'     => 'patient-appointment-created',
+        'language' => 'portuguese',
         'name'     => 'Confirmação de Agendamento (Paciente)',
         'subject'  => 'Confirmação: Consulta agendada para {appointment_date}',
         'message'  => '<p>Olá {patient_name},</p><p>Sua consulta foi agendada com sucesso.</p><p><strong>Serviço:</strong> {service_name}<br /><strong>Data:</strong> {appointment_date}<br /><strong>Horário:</strong> {appointment_time}</p><p>Atenciosamente,<br />{email_signature}</p>',
         'fromname' => '{companyname}',
+        'fromemail' => '{companyemail}',
+        'plaintext' => 0,
         'active'   => 1,
-        'language' => 'portuguese', // Ajuste conforme seu idioma padrão
+        'order'    => 0,
     ]);
-    
-    // Inserir versão em Inglês (obrigatório no core do Perfex para fallback)
+}
+
+// Template em inglês
+$CI->db->where('slug', 'patient-appointment-created');
+$CI->db->where('language', 'english');
+$exists_en = $CI->db->count_all_results(db_prefix() . 'emailtemplates');
+
+if (!$exists_en) {
     $CI->db->insert(db_prefix() . 'emailtemplates', [
-        'slug'     => 'patient-appointment-created',
         'type'     => 'patient_appointments',
+        'slug'     => 'patient-appointment-created',
+        'language' => 'english',
         'name'     => 'Appointment Confirmation (Patient)',
         'subject'  => 'Confirmation: Appointment on {appointment_date}',
         'message'  => '<p>Hi {patient_name},</p><p>Your appointment is confirmed.</p><p><strong>Service:</strong> {service_name}<br /><strong>Date:</strong> {appointment_date}<br /><strong>Time:</strong> {appointment_time}</p><p>Regards,<br />{email_signature}</p>',
         'fromname' => '{companyname}',
+        'fromemail' => '{companyemail}',
+        'plaintext' => 0,
         'active'   => 1,
-        'language' => 'english',
+        'order'    => 0,
     ]);
 }
 

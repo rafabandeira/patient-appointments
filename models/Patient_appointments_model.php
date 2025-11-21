@@ -21,63 +21,81 @@ class Patient_appointments_model extends App_Model
 
     public function add_appointment($data)
     {
-        // (Código anterior de cálculo de tempo...)
         $service = $this->get_service($data['service_id']);
         
         if (!$service) {
             return ['status' => false, 'message' => 'Serviço não encontrado.'];
         }
 
-        $duration = $service->duration_minutes;
-        $start_dt = new DateTime($data['start_time']);
-        $end_dt   = clone $start_dt;
-        $end_dt->modify("+{$duration} minutes");
-        $data['end_time'] = $end_dt->format('Y-m-d H:i:s');
+        // Validar formato da data
+        if (empty($data['start_time'])) {
+            return ['status' => false, 'message' => 'Data/hora inicial é obrigatória.'];
+        }
+
+        $duration = (int)$service->duration_minutes;
+        
+        try {
+            $start_dt = new DateTime($data['start_time']);
+            $end_dt   = clone $start_dt;
+            $end_dt->modify("+{$duration} minutes");
+            $data['end_time'] = $end_dt->format('Y-m-d H:i:s');
+        } catch (Exception $e) {
+            return ['status' => false, 'message' => 'Data/hora inválida: ' . $e->getMessage()];
+        }
+
         $data['staff_id'] = get_staff_user_id();
+        $data['status'] = isset($data['status']) ? $data['status'] : 'confirmed';
 
         // Inserção
         $this->db->insert(db_prefix() . 'pat_appointments', $data);
         $insert_id = $this->db->insert_id();
 
         if ($insert_id) {
-            // NOVA PARTE: Enviar E-mail
+            // Enviar E-mail
             $this->send_confirmation_email($insert_id);
             
             return ['status' => true, 'id' => $insert_id];
         }
-        return ['status' => false, 'message' => 'Erro ao inserir no banco'];
+        
+        return ['status' => false, 'message' => 'Erro ao inserir no banco: ' . $this->db->error()['message']];
     }
 
     // Método auxiliar para preparar e enviar o e-mail
     public function send_confirmation_email($appointment_id)
-    {
-        $this->load->model('emails_model');
+{
+    $this->load->model('emails_model');
 
-        // 1. Buscar dados completos (JOINs) para preencher as variáveis
-        $this->db->select('a.*, p.fullname as patient_name, p.email as patient_email, s.name as service_name, CONCAT(st.firstname, " ", st.lastname) as staff_name');
-        $this->db->from(db_prefix() . 'pat_appointments a');
-        $this->db->join(db_prefix() . 'pat_patients p', 'p.id = a.patient_id', 'left');
-        $this->db->join(db_prefix() . 'pat_services s', 's.id = a.service_id', 'left');
-        $this->db->join(db_prefix() . 'staff st', 'st.staffid = a.staff_id', 'left');
-        $this->db->where('a.id', $appointment_id);
-        $appointment = $this->db->get()->row();
+    // Buscar dados completos
+    $this->db->select('a.*, p.fullname as patient_name, p.email as patient_email, s.name as service_name, CONCAT(st.firstname, " ", st.lastname) as staff_name');
+    $this->db->from(db_prefix() . 'pat_appointments a');
+    $this->db->join(db_prefix() . 'pat_patients p', 'p.id = a.patient_id', 'left');
+    $this->db->join(db_prefix() . 'pat_services s', 's.id = a.service_id', 'left');
+    $this->db->join(db_prefix() . 'staff st', 'st.staffid = a.staff_id', 'left');
+    $this->db->where('a.id', $appointment_id);
+    $appointment = $this->db->get()->row();
 
-        if ($appointment && !empty($appointment->patient_email)) {
-            
-            // 2. Enviar usando o sistema nativo
-            // Passamos o objeto $appointment dentro de um array para ser pego no Hook
-            $data['appointment'] = $appointment;
+    if ($appointment && !empty($appointment->patient_email)) {
+        // Preparar merge fields
+        $merge_fields = [
+            '{patient_name}'     => $appointment->patient_name,
+            '{service_name}'     => $appointment->service_name,
+            '{appointment_date}' => _d(date('Y-m-d', strtotime($appointment->start_time))),
+            '{appointment_time}' => date('H:i', strtotime($appointment->start_time)),
+            '{staff_name}'       => $appointment->staff_name,
+        ];
 
-            return $this->emails_model->send_simple_email(
-                $appointment->patient_email, 
-                'Confirmação de Agendamento', // Fallback subject
-                '', // Mensagem vazia pois o template vai substituir
-                'patient-appointment-created', // Slug do template
-                $data // Dados para o hook
-            );
-        }
-        return false;
+        // Usar send_mail_template do Perfex
+        return send_mail_template(
+            'patient-appointment-created',
+            'patient_appointments',
+            $appointment->patient_email,
+            $appointment->patient_id,
+            $appointment->patient_id,
+            $merge_fields
+        );
     }
+    return false;
+}
 
     public function check_conflict($start, $end, $staff_id)
     {
